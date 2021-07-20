@@ -13,4 +13,4 @@ import { CSVBoxButtonComponent } from './csvbox-button.component';
     CSVBoxButtonComponent
   ]
 })
-export class CSVBoxAdapterModule { }
+export class CSVBoxAngularModule { }

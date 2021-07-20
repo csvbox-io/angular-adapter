@@ -47,7 +47,7 @@ export class CSVBoxButtonComponent implements OnInit {
   constructor(public sanitizer:DomSanitizer) {}
 
   ngOnInit(): void {
-    this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl("https://staging.csvbox.io/embed/" + this.licenseKey);
+    this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl("https://app.csvbox.io/embed/" + this.licenseKey);
   }
 
   ngAfterViewInit(): void {

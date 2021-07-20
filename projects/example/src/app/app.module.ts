@@ -3,7 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppComponent } from './app.component';
 
-import { CSVBoxAdapterModule } from "angular-adapter";
+import { CSVBoxAngularModule } from "angular-adapter";
 
 @NgModule({
   declarations: [
@@ -11,7 +11,7 @@ import { CSVBoxAdapterModule } from "angular-adapter";
   ],
   imports: [
     BrowserModule,
-    CSVBoxAdapterModule
+    CSVBoxAngularModule
   ],
   providers: [],
   bootstrap: [AppComponent]

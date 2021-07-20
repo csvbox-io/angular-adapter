@@ -9,12 +9,13 @@ import { CSVBoxMethods } from "angular-adapter"
       [user]="user"
       [onImport]="onData.bind(this)">
       Import
-    </csvbox-button>`
+    </csvbox-button>
+  `
 })
 export class AppComponent implements CSVBoxMethods {
 
   title = 'example';
-  licenseKey = 'WFvwX7nMLJ8isMw0Ph560DB3CWTsJC';
+  licenseKey = 'YOUR_LICENSE_KEY_HERE';
   user = { user_id: 'default123' };
 
   onData(result: boolean, data: any) {
