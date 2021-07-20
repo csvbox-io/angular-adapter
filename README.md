@@ -2,7 +2,7 @@
 
 > Angular adapter for csvbox.io
 
-[![NPM](https://img.shields.io/npm/v/@csvbox/csvbox-angular.svg)](https://www.npmjs.com/package/@csvbox/csvbox-angular) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![NPM](https://img.shields.io/npm/v/@csvbox/angular.svg)](https://www.npmjs.com/package/@csvbox/angular) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
 ## Shell
 
