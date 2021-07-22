@@ -16,6 +16,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
   styles: [
     `
       .holder{
+        z-index: 2147483647;
         position: fixed;
         top: 0;
         bottom: 0;

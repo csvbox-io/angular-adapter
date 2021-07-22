@@ -1,7 +1,7 @@
 {
   "name": "@csvbox/angular",
   "version": "0.0.1",
-  "description": "React adapter for csvbox.io",
+  "description": "Angular adapter for csvbox.io",
   "author": "csvbox-io",
   "license": "MIT",
   "repository": {
