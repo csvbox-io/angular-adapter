@@ -43,6 +43,7 @@ export class CSVBoxButtonComponent implements OnInit {
   @ViewChild('iframe') iframe: any;
   @Input() onImport: Function;
   @Input() user: Object;
+  @Input() dynamicColumns: Object;
   @Input() licenseKey: String;
 
   safeUrl:SafeUrl;
@@ -81,11 +82,17 @@ export class CSVBoxButtonComponent implements OnInit {
 
     let iframe = this.iframe.nativeElement;
     let user = this.user;
+    let dynamicColumns = this.dynamicColumns;
 
     iframe.onload = function () {
       if(user) {
         iframe.contentWindow.postMessage({
           "customer" : user
+        }, "*");
+      }
+      if(dynamicColumns) {
+        iframe.contentWindow.postMessage({
+          "columns" : dynamicColumns
         }, "*");
       }
     }
