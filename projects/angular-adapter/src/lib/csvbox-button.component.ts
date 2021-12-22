@@ -105,7 +105,7 @@ export class CSVBoxButtonComponent implements OnInit {
           "columns" : dynamicColumns
         }, "*");
       }
-      (document.querySelector("[data-csvbox]") as HTMLButtonElement).disabled = true;
+      (document.querySelector("[data-csvbox]") as HTMLButtonElement).disabled = false;
     }
 
   }
