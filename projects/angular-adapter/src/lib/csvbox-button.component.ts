@@ -55,22 +55,25 @@ export class CSVBoxButtonComponent implements OnInit {
   }
 
   ngAfterViewInit(): void {
-
-    if(document.querySelector("[data-csvbox]") != null){
-      document.onreadystatechange = () => {
-          if (document.readyState === 'complete') {
-            (document.querySelector("[data-csvbox]") as HTMLButtonElement).disabled = false;
-          }else{
-            (document.querySelector("[data-csvbox]") as HTMLButtonElement).disabled = true;
-          }
-      };
-    }
+    // if(!document.querySelectorAll("[data-csvbox]").length) {
+    //   document.onreadystatechange = () => {
+    //       if (document.readyState === 'complete') {
+    //         document.querySelectorAll("[data-csvbox]").forEach(element => {
+    //           (element as HTMLButtonElement).disabled = false;
+    //         });
+    //       }else{
+    //         document.querySelectorAll("[data-csvbox]").forEach(element => {
+    //           (element as HTMLButtonElement).disabled = true;
+    //         });
+    //       }
+    //   };
+    // }
 
     window.addEventListener("message", (event) => {
       if (event.data === "mainModalHidden") {
-          this.holder.nativeElement.style.display = 'none';
-          this.holder.nativeElement.querySelector('iframe').src = this.holder.nativeElement.querySelector('iframe').src;
-          this.isModalShown = false;
+        this.holder.nativeElement.style.display = 'none';
+        this.holder.nativeElement.querySelector('iframe').src = this.holder.nativeElement.querySelector('iframe').src;
+        this.isModalShown = false;
       }
       if(event.data === "uploadSuccessful") {
         this.onImport(true);
@@ -79,14 +82,13 @@ export class CSVBoxButtonComponent implements OnInit {
         this.onImport(false);
       }
       if(typeof event.data == "object") {
-          if(event.data.type && event.data.type == "data-push-status") {
-              if(event.data.data.import_status = "success"){
-                this.onImport(true, event.data.data);
-              }else {
-                this.onImport(false, event.data.data);
-              }
-
+        if(event.data.type && event.data.type == "data-push-status") {
+          if(event.data.data.import_status = "success") {
+            this.onImport(true, event.data.data);
+          }else {
+            this.onImport(false, event.data.data);
           }
+        }
       }
     }, false);
 
@@ -105,7 +107,11 @@ export class CSVBoxButtonComponent implements OnInit {
           "columns" : dynamicColumns
         }, "*");
       }
-      (document.querySelector("[data-csvbox]") as HTMLButtonElement).disabled = false;
+
+      document.querySelectorAll("[data-csvbox]").forEach(element => {
+        (element as HTMLButtonElement).disabled = false;
+      });
+
     }
 
   }
@@ -113,7 +119,6 @@ export class CSVBoxButtonComponent implements OnInit {
   openModal(): void {
     if(!this.isModalShown) {
       this.isModalShown = true;
-      console.log(this.iframe.nativeElement);
       this.iframe.nativeElement.contentWindow.postMessage('openModal', '*');
       this.holder.nativeElement.style.display = 'block';
     }
