@@ -72,7 +72,7 @@ export class CSVBoxButtonComponent implements OnInit {
     window.addEventListener("message", (event) => {
       if (event.data === "mainModalHidden") {
         this.holder.nativeElement.style.display = 'none';
-        this.holder.nativeElement.querySelector('iframe').src = this.holder.nativeElement.querySelector('iframe').src;
+        // this.holder.nativeElement.querySelector('iframe').src = this.holder.nativeElement.querySelector('iframe').src;
         this.isModalShown = false;
       }
       if(event.data === "uploadSuccessful") {
