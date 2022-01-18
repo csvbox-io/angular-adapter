@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, Input } from '@angular/core';
+import { Component, OnInit, ViewChild, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
@@ -35,7 +35,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
   ]
 })
 
-export class CSVBoxButtonComponent implements OnInit {
+export class CSVBoxButtonComponent implements OnInit, OnChanges {
 
   isModalShown = false;
 
@@ -45,6 +45,7 @@ export class CSVBoxButtonComponent implements OnInit {
   @Input() user: Object;
   @Input() dynamicColumns: Object;
   @Input() licenseKey: String;
+  @Input() options: Object;
 
   safeUrl:SafeUrl;
 
@@ -54,25 +55,23 @@ export class CSVBoxButtonComponent implements OnInit {
     this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl("https://app.csvbox.io/embed/" + this.licenseKey);
   }
 
-  ngAfterViewInit(): void {
-    // if(!document.querySelectorAll("[data-csvbox]").length) {
-    //   document.onreadystatechange = () => {
-    //       if (document.readyState === 'complete') {
-    //         document.querySelectorAll("[data-csvbox]").forEach(element => {
-    //           (element as HTMLButtonElement).disabled = false;
-    //         });
-    //       }else{
-    //         document.querySelectorAll("[data-csvbox]").forEach(element => {
-    //           (element as HTMLButtonElement).disabled = true;
-    //         });
-    //       }
-    //   };
-    // }
+  ngOnChanges(changes: SimpleChanges) {
+    if(changes["user"] && changes['user'].currentValue != changes['user'].previousValue) {
+      this.updateUserVariabe(changes['user'].currentValue);
+    }
+  }
 
+  updateUserVariabe(data): void {
+    this.user = data;
+    this.iframe?.nativeElement?.contentWindow?.postMessage({
+      "customer" : data
+    }, "*");
+  }
+
+  ngAfterViewInit(): void {
     window.addEventListener("message", (event) => {
       if (event.data === "mainModalHidden") {
         this.holder.nativeElement.style.display = 'none';
-        // this.holder.nativeElement.querySelector('iframe').src = this.holder.nativeElement.querySelector('iframe').src;
         this.isModalShown = false;
       }
       if(event.data === "uploadSuccessful") {
@@ -83,9 +82,9 @@ export class CSVBoxButtonComponent implements OnInit {
       }
       if(typeof event.data == "object") {
         if(event.data.type && event.data.type == "data-push-status") {
-          if(event.data.data.import_status = "success") {
+          if(event.data.data.import_status == "success") {
             this.onImport(true, event.data.data);
-          }else {
+          } else {
             this.onImport(false, event.data.data);
           }
         }
@@ -93,8 +92,10 @@ export class CSVBoxButtonComponent implements OnInit {
     }, false);
 
     let iframe = this.iframe.nativeElement;
+
     let user = this.user;
     let dynamicColumns = this.dynamicColumns;
+    let options = this.options;
 
     iframe.onload = function () {
       if(user) {
@@ -107,15 +108,16 @@ export class CSVBoxButtonComponent implements OnInit {
           "columns" : dynamicColumns
         }, "*");
       }
-
+      if(options) {
+        iframe.contentWindow.postMessage({
+          "options" : options
+        }, "*");
+      }
       document.querySelectorAll("[data-csvbox]").forEach(element => {
         (element as HTMLButtonElement).disabled = false;
       });
-
     }
-
   }
-
   openModal(): void {
     if(!this.isModalShown) {
       this.isModalShown = true;
@@ -123,5 +125,4 @@ export class CSVBoxButtonComponent implements OnInit {
       this.holder.nativeElement.style.display = 'block';
     }
   }
-
 }
