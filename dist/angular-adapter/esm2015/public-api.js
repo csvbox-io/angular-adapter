@@ -1,0 +1,8 @@
+/*
+ * Public API Surface of angular-adapter
+ */
+// export * from './lib/angular-adapter.service';
+export * from './lib/csvbox-button.component';
+export * from './lib/csvbox-angular.module';
+export * from './lib/interfaces/interface';
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHVibGljLWFwaS5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uLy4uLy4uL3Byb2plY3RzL2FuZ3VsYXItYWRhcHRlci9zcmMvcHVibGljLWFwaS50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQTs7R0FFRztBQUVILGlEQUFpRDtBQUNqRCxjQUFjLCtCQUErQixDQUFDO0FBQzlDLGNBQWMsNkJBQTZCLENBQUM7QUFDNUMsY0FBYyw0QkFBNEIsQ0FBQyIsInNvdXJjZXNDb250ZW50IjpbIi8qXG4gKiBQdWJsaWMgQVBJIFN1cmZhY2Ugb2YgYW5ndWxhci1hZGFwdGVyXG4gKi9cblxuLy8gZXhwb3J0ICogZnJvbSAnLi9saWIvYW5ndWxhci1hZGFwdGVyLnNlcnZpY2UnO1xuZXhwb3J0ICogZnJvbSAnLi9saWIvY3N2Ym94LWJ1dHRvbi5jb21wb25lbnQnO1xuZXhwb3J0ICogZnJvbSAnLi9saWIvY3N2Ym94LWFuZ3VsYXIubW9kdWxlJztcbmV4cG9ydCAqIGZyb20gJy4vbGliL2ludGVyZmFjZXMvaW50ZXJmYWNlJztcbiJdfQ==

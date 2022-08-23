@@ -1,0 +1,31 @@
+import { OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import * as i0 from "@angular/core";
+export declare class CSVBoxButtonComponent implements OnInit, OnChanges {
+    sanitizer: DomSanitizer;
+    isModalShown: boolean;
+    holder: any;
+    iframe: any;
+    onImport: Function;
+    onReady: Function;
+    onClose: Function;
+    onSubmit: Function;
+    user: Object;
+    dynamicColumns: Object;
+    licenseKey: String;
+    options: Object;
+    uuid: String;
+    debugMode: boolean;
+    useStagingServer: boolean;
+    safeUrl: SafeUrl;
+    constructor(sanitizer: DomSanitizer);
+    ngOnInit(): void;
+    generateUuid(): string;
+    ngOnChanges(changes: SimpleChanges): void;
+    updateUserVariabe(data: any): void;
+    ngAfterViewInit(): void;
+    enableInitator(): void;
+    openModal(): void;
+    static ɵfac: i0.ɵɵFactoryDeclaration<CSVBoxButtonComponent, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CSVBoxButtonComponent, "csvbox-button", never, { "onImport": "onImport"; "onReady": "onReady"; "onClose": "onClose"; "onSubmit": "onSubmit"; "user": "user"; "dynamicColumns": "dynamicColumns"; "licenseKey": "licenseKey"; "options": "options"; "uuid": "uuid"; "debugMode": "debugMode"; "useStagingServer": "useStagingServer"; }, {}, never, ["*"]>;
+}
