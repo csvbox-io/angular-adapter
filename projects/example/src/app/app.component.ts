@@ -19,7 +19,7 @@ import { CSVBoxMethods } from "angular-adapter"
 export class AppComponent implements CSVBoxMethods {
 
   title = 'example';
-  licenseKey = 'Sheet License Key';
+  licenseKey = '3HRBJvxsxEkHncXTmC43zbsCCS8DVZ';
   user = { user_id: 'default123' };
   dynamicColumns = [
     // {
