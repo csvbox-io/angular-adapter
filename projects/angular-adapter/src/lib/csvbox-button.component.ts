@@ -1,6 +1,8 @@
 import { Component, OnInit, ViewChild, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
+const packageJson = require('./../package.json');
+
 @Component({
   selector: 'csvbox-button',
   template: `
@@ -51,8 +53,9 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
   @Input() licenseKey: String;
   @Input() options: Object;
   @Input() uuid: String = null;
-  @Input() debugMode: boolean;
-  @Input() useStagingServer: boolean;
+  @Input() customDomain: String = null;
+  @Input() dataLocation: String = null;
+  @Input() language: String = null;
 
   safeUrl:SafeUrl;
 
@@ -60,16 +63,18 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.uuid = this.generateUuid();
-    if(this.debugMode) {
-      console.log(`[Csvbox-${this.uuid}]`,"UUID:");
-      console.log(`[Csvbox-${this.uuid}]`,"License key:", this.licenseKey);
-      console.log(`[Csvbox-${this.uuid}]`,`Using ${this.useStagingServer ? 'staging' : 'live'} server` );
+    let domain = this.customDomain ? this.customDomain : "app.csvbox.io";
+    if(this.dataLocation) { domain = `${this.dataLocation}-${domain}`; }
+    let iframeUrl = `https://${domain}/embed/${this.licenseKey}`;
+    iframeUrl += `?library-version=${packageJson.version}`;
+    iframeUrl += "&framework=angular";
+    if(this.dataLocation) {
+      iframeUrl += "&preventRedirect";
     }
-    let url = `https://${this.useStagingServer ? 'staging' : 'app' }.csvbox.io/embed/${this.licenseKey}`;
-
-    url += "?library-version=2";
-
-    this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    if(this.language){
+      iframeUrl += "&language" + this.language;
+    }
+    this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(iframeUrl);
   }
 
   generateUuid(): string {
@@ -91,20 +96,6 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
 
   ngAfterViewInit(): void {
     window.addEventListener("message", (event) => {
-
-      if(this.debugMode) { console.log(`[Csvbox-${this.uuid}]`, "Message:", event); }
-
-      if (event?.data === "mainModalHidden") {
-        this.holder.nativeElement.style.display = 'none';
-        this.isModalShown = false;
-        this.onClose?.();
-      }
-      if(event?.data === "uploadSuccessful") {
-        this.onImport(true);
-      }
-      if(event?.data === "uploadFailed") {
-        this.onImport(false);
-      }
       if(typeof event?.data == "object") {
         if(event?.data?.data?.unique_token == this.uuid) {
           if(event.data.type && event.data.type == "data-on-submit") {
@@ -113,8 +104,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
             // this.callback(true, metadata);
             delete metadata["unique_token"];
             this.onSubmit?.(metadata);
-        }
-        else if(event.data.type && event.data.type == "data-push-status") {
+          } else if(event.data.type && event.data.type == "data-push-status") {
             if(event.data.data.import_status == "success") {
                 // this.callback(true, event.data.data);
                 if(event?.data?.row_data) {
@@ -169,7 +159,15 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
                 delete metadata["unique_token"];
                 this.onImport(false, metadata);
             }
-        }
+          } else if(event.data.type && event.data.type == "csvbox-modal-hidden") {
+            this.holder.nativeElement.style.display = 'none';
+            this.isModalShown = false;
+            this.onClose?.();
+          } else if(event.data.type && event.data.type == "csvbox-upload-successful") {
+              this.onImport(true);
+          } else if(event.data.type && event.data.type == "csvbox-upload-failed") {
+              this.onImport(false);
+          }
 
 
         }
@@ -177,28 +175,18 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
     }, false);
 
     let iframe = this.iframe.nativeElement;
-    // let user = this.user;
-    // let dynamicColumns = this.dynamicColumns;
-    // let options = this.options;
-    // let uuid = this.uuid;
 
     let self = this;
 
     iframe.onload = function () {
-
-      if(self.debugMode) { console.log(`[Csvbox-${self.uuid}]`,"iframe loaded"); }
-
       self.onReady?.();
-
       self.enableInitator();
-
       iframe.contentWindow.postMessage({
         "customer" : self.user ? self.user : null,
         "columns" : self.dynamicColumns ? self.dynamicColumns : null,
         "options" : self.options ? self.options : null,
         "unique_token": self.uuid
       }, "*");
-
     }
   }
   enableInitator(){
