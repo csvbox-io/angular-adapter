@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit, ViewChild, Input, OnChanges, SimpleChanges, SecurityContext } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 const packageJson = require('./../package.json');
@@ -10,9 +10,7 @@ const packageJson = require('./../package.json');
       <button disabled (click)="openModal()" data-csvbox-initator [attr.data-csvbox-token]="uuid">
         <ng-content></ng-content>
       </button>
-      <div #holder class="holder" attr.id="csvbox-embed-{{ uuid }}">
-        <iframe #iframe class="iframe" [src]="safeUrl" [attr.data-csvbox-token]="uuid"></iframe>
-      </div>
+      <div #holder class="holder" attr.id="csvbox-embed-{{ uuid }}"></div>
     </div>
   `,
   styles: [
@@ -26,7 +24,7 @@ const packageJson = require('./../package.json');
         right: 0;
         display: none;
       }
-      .iframe{
+      .csvbox-iframe {
         height: 100%;
         width: 100%;
         position: absolute;
@@ -42,7 +40,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
   isModalShown = false;
 
   @ViewChild('holder') holder: any;
-  @ViewChild('iframe') iframe: any;
+  // @ViewChild('iframe') iframe: any;
   @Input() onImport: Function;
   @Input() onReady: Function;
   @Input() onClose: Function;
@@ -57,7 +55,14 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
   @Input() dataLocation: String = null;
   @Input() language: String = null;
 
-  safeUrl:SafeUrl;
+  @Input() isIframeLoaded: boolean = false;
+  @Input() openModalOnIframeLoad: boolean = false;
+
+  @Input() lazy: boolean = false;
+
+  safeUrl: any;
+
+  iframe = null;
 
   constructor(public sanitizer:DomSanitizer) {}
 
@@ -74,7 +79,11 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
     if(this.language){
       iframeUrl += "&language" + this.language;
     }
-    this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(iframeUrl);
+    // this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(iframeUrl);
+
+    this.safeUrl = this.sanitizer.sanitize(SecurityContext.RESOURCE_URL, this.sanitizer.bypassSecurityTrustResourceUrl(iframeUrl));
+
+
   }
 
   generateUuid(): string {
@@ -89,7 +98,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
 
   updateUserVariabe(data): void {
     this.user = data;
-    this.iframe?.nativeElement?.contentWindow?.postMessage({
+    this.iframe?.contentWindow?.postMessage({
       "customer" : data
     }, "*");
   }
@@ -174,32 +183,96 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
       }
     }, false);
 
-    let iframe = this.iframe.nativeElement;
+    // let iframe = this.iframe.nativeElement;
+    // let self = this;
+    // iframe.onload = function () {
+    //   self.onReady?.();
+    //   self.enableInitator();
+    //   iframe.contentWindow.postMessage({
+    //     "customer" : self.user ? self.user : null,
+    //     "columns" : self.dynamicColumns ? self.dynamicColumns : null,
+    //     "options" : self.options ? self.options : null,
+    //     "unique_token": self.uuid
+    //   }, "*");
+    // }
+
+    if(this.lazy) {
+      this.enableInitator();
+    } else {
+        this.initImporter();
+    }
+
+  }
+  initImporter() {
+    let iframe = document.createElement("iframe");
+    this.iframe = iframe;
+    iframe.setAttribute("src", this.safeUrl);
+    iframe.frameBorder = "0";
+    // iframe.classList.add('csvbox-iframe');
+
+    
+    iframe.style.height = "100%";
+    iframe.style.width = "100%";
+    iframe.style.position = "absolute";
+    iframe.style.top = "0px";
+    iframe.style.left = "0px";
 
     let self = this;
-
     iframe.onload = function () {
       self.onReady?.();
       self.enableInitator();
+      self.isIframeLoaded = true;
       iframe.contentWindow.postMessage({
         "customer" : self.user ? self.user : null,
         "columns" : self.dynamicColumns ? self.dynamicColumns : null,
         "options" : self.options ? self.options : null,
         "unique_token": self.uuid
       }, "*");
+      if(self.openModalOnIframeLoad) {
+        self.openModal();
+      }
     }
+
+    this.holder.nativeElement.appendChild(iframe);
+
   }
-  enableInitator(){
+  
+  enableInitator() {
     let initator = document.querySelector(`[data-csvbox-initator][data-csvbox-token="${this.uuid}"]`) as HTMLButtonElement;
     if(initator && initator.disabled !== undefined) {
       initator.disabled = false;
     }
   }
-  openModal(): void {
-    if(!this.isModalShown) {
-      this.isModalShown = true;
-      this.iframe.nativeElement.contentWindow.postMessage('openModal', '*');
-      this.holder.nativeElement.style.display = 'block';
+
+  disableInitator() {
+    let initator = document.querySelector(`[data-csvbox-initator][data-csvbox-token="${this.uuid}"]`) as HTMLButtonElement;
+    if(initator && initator.disabled !== undefined) {
+      initator.disabled = true;
     }
   }
+  
+  openModal(): void {
+
+    if(this.lazy) {
+      console.log("is lazy");
+      if(!this.iframe) {
+        console.log("!iframe");
+          this.openModalOnIframeLoad = true;
+          this.initImporter();
+          return;
+      }else{
+        console.log("iframe");
+      }
+    }
+    if(!this.isModalShown) {
+      if(this.isIframeLoaded) {
+          this.isModalShown = true;
+          this.holder.nativeElement.style.display = 'block';
+          this.iframe.contentWindow.postMessage('openModal', '*');
+      } else {
+          this.openModalOnIframeLoad = true;
+      }                    
+    }
+  }
+
 }
