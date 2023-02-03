@@ -46,6 +46,11 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
   @Input() onClose: Function;
   @Input() onSubmit: Function;
 
+  @Input() isImported: Function;
+  @Input() isReady: Function;
+  @Input() isClosed: Function;
+  @Input() isSubmitted: Function;
+
   @Input() user: Object;
   @Input() dynamicColumns: Object;
   @Input() licenseKey: String;
@@ -113,6 +118,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
             // this.callback(true, metadata);
             delete metadata["unique_token"];
             this.onSubmit?.(metadata);
+            this.isSubmitted?.(metadata);
           } else if(event.data.type && event.data.type == "data-push-status") {
             if(event.data.data.import_status == "success") {
                 // this.callback(true, event.data.data);
@@ -157,25 +163,31 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
                     let metadata = event.data.data;
                     metadata["rows"] = rows;
                     delete metadata["unique_token"];
-                    this.onImport(true, metadata);
+                    this.onImport?.(true, metadata);
+                    this.isImported?.(true, metadata);
                 }else{
                     let metadata = event.data.data;
                     delete metadata["unique_token"];
-                    this.onImport(true, metadata);
+                    this.onImport?.(true, metadata);
+                    this.isImported?.(true, metadata);
                 }
             }else {
                 let metadata = event.data.data;
                 delete metadata["unique_token"];
-                this.onImport(false, metadata);
+                this.onImport?.(false, metadata);
+                this.isImported?.(false, metadata);
             }
           } else if(event.data.type && event.data.type == "csvbox-modal-hidden") {
             this.holder.nativeElement.style.display = 'none';
             this.isModalShown = false;
             this.onClose?.();
+            this.isClosed?.();
           } else if(event.data.type && event.data.type == "csvbox-upload-successful") {
-              this.onImport(true);
+              this.onImport?.(true);
+              this.isImported?.(true);
           } else if(event.data.type && event.data.type == "csvbox-upload-failed") {
-              this.onImport(false);
+              this.onImport?.(false);
+              this.isImported?.(false);
           }
 
 
@@ -220,6 +232,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
     let self = this;
     iframe.onload = function () {
       self.onReady?.();
+      self.isReady?.();
       self.enableInitator();
       self.isIframeLoaded = true;
       iframe.contentWindow.postMessage({

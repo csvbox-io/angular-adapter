@@ -27,13 +27,12 @@ import { CSVBoxAngularModule } from "@csvbox/angular";
 ## Usage
 
 ```html
-<csvbox-button [licenseKey]="licenseKey" [onImport]="onData.bind(this)" [user]="user">Import</csvbox-button>
+<csvbox-button [licenseKey]="licenseKey" [isImported]="isImported.bind(this)" [user]="user">Import</csvbox-button>
 ```
 
 ## Example
 
 ```ts
-import { CSVBoxMethods } from "@csvbox/angular"
 
 @Component({
   selector: 'app-root',
@@ -41,19 +40,19 @@ import { CSVBoxMethods } from "@csvbox/angular"
     <csvbox-button
       [licenseKey]="licenseKey"
       [user]="user"
-      [onImport]="onData.bind(this)">
+      [isImported]="isImported.bind(this)">
       Import
     </csvbox-button>
   `
 })
 
-export class AppComponent implements CSVBoxMethods {
+export class AppComponent {
 
   title = 'example';
   licenseKey = 'YOUR_LICENSE_KEY_HERE';
   user = { user_id: 'default123' };
 
-  onData(result: boolean, data: any) {
+  isImported(result: boolean, data: any) {
     if(result) {
       console.log("Sheet uploaded successfully");
       console.log(data.row_success + " rows uploaded");
@@ -64,6 +63,15 @@ export class AppComponent implements CSVBoxMethods {
 
 }
 ```
+
+## Events
+
+| Event       | Description                                                               |
+| :---------- | :-------------------------------------------------------------------------|
+| `isReady`   | Triggers when the importer is initialized and ready for use by the users. |
+| `isClosed`   | Triggers when the importer is closed.                                     |
+| `isSubmitted`   | Triggers when the user hits the 'Submit' button to upload the validated file. **data** object is available in this event. It contains metadata related to the import.|
+| `isImported`   | Triggers when the data is pushed to the destination.<br>Two objects are available in this event:<br>1. result (boolean): It is true when the import is successful and false when the import fails.<br>2. data (object): Contains metadata related to the import.|
 
 ## Readme
 
