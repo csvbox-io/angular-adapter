@@ -7,7 +7,6 @@ import { CSVBoxMethods } from "angular-adapter"
     <csvbox-button
       [licenseKey]="licenseKey"
       [user]="user"
-      [dynamicColumns]="dynamicColumns"
       [onImport]="onData.bind(this)"
       [onSubmit]="onSubmit.bind(this)"
       [onClose]="onClose.bind(this)"
@@ -19,14 +18,8 @@ import { CSVBoxMethods } from "angular-adapter"
 export class AppComponent implements CSVBoxMethods {
 
   title = 'example';
-  licenseKey = '3HRBJvxsxEkHncXTmC43zbsCCS8DVZ';
+  licenseKey = 'W9HiWdD7WDCSgCnrgYTNZ3qviFUwvu';
   user = { user_id: 'default123' };
-  dynamicColumns = [
-    // {
-    //   column_name: 'col2',
-    //   type: 'text'
-    // }
-  ];
 
   onData(result: boolean, data: any) {
     console.log("result", result, "data", data)

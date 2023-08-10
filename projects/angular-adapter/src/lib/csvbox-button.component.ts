@@ -1,46 +1,34 @@
-import { Component, OnInit, ViewChild, Input, OnChanges, SimpleChanges, SecurityContext } from '@angular/core';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { 
+  Component,
+  OnInit, 
+  ViewChild, 
+  Input, 
+  OnChanges, 
+  SimpleChanges, 
+  SecurityContext,
+  AfterContentInit 
+} from '@angular/core';
 
-const packageJson = require('./../package.json');
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+const { version: appVersion } = require('./../package.json');
+import { insertCSS } from '../utlis/insertCSS';
 
 @Component({
   selector: 'csvbox-button',
   template: `
     <div>
-      <button disabled (click)="openModal()" data-csvbox-initator [attr.data-csvbox-token]="uuid">
+      <button [disabled]="disabled" #initiator (click)="openModal()" [attr.data-csvbox-token]="uuid">
         <ng-content></ng-content>
       </button>
-      <div #holder class="holder" attr.id="csvbox-embed-{{ uuid }}"></div>
     </div>
-  `,
-  styles: [
-    `
-      .holder{
-        z-index: 2147483647;
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        display: none;
-      }
-      .csvbox-iframe {
-        height: 100%;
-        width: 100%;
-        position: absolute;
-        top: 0px;
-        left: 0px;
-      }
-    `
-  ]
+  `
 })
 
-export class CSVBoxButtonComponent implements OnInit, OnChanges {
+export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentInit {
 
   isModalShown = false;
 
-  @ViewChild('holder') holder: any;
-  // @ViewChild('iframe') iframe: any;
+  @ViewChild('initiator') initiator: any;
   @Input() onImport: Function;
   @Input() onReady: Function;
   @Input() onClose: Function;
@@ -50,6 +38,12 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
   @Input() isReady: Function;
   @Input() isClosed: Function;
   @Input() isSubmitted: Function;
+
+  @Input() importerReady: Function;
+  @Input() closed: Function;
+  @Input() submitted: Function;
+  @Input() imported: Function;
+  @Input() loadStarted: Function;
 
   @Input() user: Object;
   @Input() dynamicColumns: Object;
@@ -69,14 +63,19 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
 
   iframe = null;
 
+  @Input() disabled: boolean = true;
+
   constructor(public sanitizer:DomSanitizer) {}
 
+  holder: any;
+
   ngOnInit(): void {
+
     this.uuid = this.generateUuid();
     let domain = this.customDomain ? this.customDomain : "app.csvbox.io";
     if(this.dataLocation) { domain = `${this.dataLocation}-${domain}`; }
     let iframeUrl = `https://${domain}/embed/${this.licenseKey}`;
-    iframeUrl += `?library-version=${packageJson.version}`;
+    iframeUrl += `?library-version=${appVersion}`;
     iframeUrl += "&framework=angular";
     if(this.dataLocation) {
       iframeUrl += "&preventRedirect";
@@ -84,11 +83,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
     if(this.language){
       iframeUrl += "&language" + this.language;
     }
-    // this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(iframeUrl);
-
     this.safeUrl = this.sanitizer.sanitize(SecurityContext.RESOURCE_URL, this.sanitizer.bypassSecurityTrustResourceUrl(iframeUrl));
-
-
   }
 
   generateUuid(): string {
@@ -108,20 +103,20 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
     }, "*");
   }
 
-  ngAfterViewInit(): void {
+  ngAfterContentInit(): void {
+
     window.addEventListener("message", (event) => {
       if(typeof event?.data == "object") {
         if(event?.data?.data?.unique_token == this.uuid) {
           if(event.data.type && event.data.type == "data-on-submit") {
             let metadata = event.data.data;
             metadata["column_mappings"] = event.data.column_mapping;
-            // this.callback(true, metadata);
             delete metadata["unique_token"];
             this.onSubmit?.(metadata);
             this.isSubmitted?.(metadata);
+            this.submitted?.(metadata);
           } else if(event.data.type && event.data.type == "data-push-status") {
             if(event.data.data.import_status == "success") {
-                // this.callback(true, event.data.data);
                 if(event?.data?.row_data) {
                     let primary_row_data = event.data.row_data;
                     let headers = event.data.headers;
@@ -135,7 +130,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
                         let dynamic_columns = {};
                         let virtual_data = {};
 
-                        row_data.data.forEach((col, i)=>{
+                        row_data.data.forEach((col, i) => {
 
                             if(col == undefined){ col = ""};
 
@@ -145,8 +140,8 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
                             else if(virtual_columns_indexes.includes(i)) {
                               virtual_data[headers[i]] = col;
                             }
-                            else{
-                                x[headers[i]] = col;
+                            else {
+                              x[headers[i]] = col;
                             }
                         });
                         if(row_data?.unmapped_data) {
@@ -162,78 +157,73 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
                     });
                     let metadata = event.data.data;
                     metadata["rows"] = rows;
+                    metadata["column_mappings"] = event.data.column_mapping;
+                    metadata["raw_columns"] = event.data.raw_columns;
+                    metadata["ignored_columns"] = event.data.ignored_column_row;
                     delete metadata["unique_token"];
                     this.onImport?.(true, metadata);
                     this.isImported?.(true, metadata);
+                    this.imported?.(true, metadata);
                 }else{
                     let metadata = event.data.data;
                     delete metadata["unique_token"];
                     this.onImport?.(true, metadata);
                     this.isImported?.(true, metadata);
+                    this.imported?.(true, metadata);
                 }
             }else {
                 let metadata = event.data.data;
                 delete metadata["unique_token"];
                 this.onImport?.(false, metadata);
                 this.isImported?.(false, metadata);
+                this.imported?.(false, metadata);
             }
           } else if(event.data.type && event.data.type == "csvbox-modal-hidden") {
-            this.holder.nativeElement.style.display = 'none';
+            this.holder.style.display = 'none';
             this.isModalShown = false;
             this.onClose?.();
             this.isClosed?.();
+            this.closed?.();
           } else if(event.data.type && event.data.type == "csvbox-upload-successful") {
               this.onImport?.(true);
               this.isImported?.(true);
+              this.imported?.(true);
           } else if(event.data.type && event.data.type == "csvbox-upload-failed") {
               this.onImport?.(false);
               this.isImported?.(false);
+              this.imported?.(false);
           }
-
-
         }
       }
     }, false);
 
-    // let iframe = this.iframe.nativeElement;
-    // let self = this;
-    // iframe.onload = function () {
-    //   self.onReady?.();
-    //   self.enableInitator();
-    //   iframe.contentWindow.postMessage({
-    //     "customer" : self.user ? self.user : null,
-    //     "columns" : self.dynamicColumns ? self.dynamicColumns : null,
-    //     "options" : self.options ? self.options : null,
-    //     "unique_token": self.uuid
-    //   }, "*");
-    // }
-
     if(this.lazy) {
-      this.enableInitator();
+      this.disabled = false;
     } else {
-        this.initImporter();
+      this.disabled = true;
+      this.initImporter();
     }
 
   }
   initImporter() {
+
+    this.loadStarted?.();
+
+    insertCSS();
+
     let iframe = document.createElement("iframe");
     this.iframe = iframe;
     iframe.setAttribute("src", this.safeUrl);
     iframe.frameBorder = "0";
-    // iframe.classList.add('csvbox-iframe');
-
-    
-    iframe.style.height = "100%";
-    iframe.style.width = "100%";
-    iframe.style.position = "absolute";
-    iframe.style.top = "0px";
-    iframe.style.left = "0px";
 
     let self = this;
     iframe.onload = function () {
+      
       self.onReady?.();
       self.isReady?.();
-      self.enableInitator();
+      self.importerReady?.();
+
+      self.disabled = false;
       self.isIframeLoaded = true;
       iframe.contentWindow.postMessage({
         "customer" : self.user ? self.user : null,
@@ -246,45 +236,33 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges {
       }
     }
 
-    this.holder.nativeElement.appendChild(iframe);
+    this.holder = document.createElement('div');
+    this.holder.classList.add('csvbox-holder');
+    this.holder.setAttribute('id', `csvbox-embed-${this.uuid}`);
+    this.holder.appendChild(iframe);
 
-  }
-  
-  enableInitator() {
-    let initator = document.querySelector(`[data-csvbox-initator][data-csvbox-token="${this.uuid}"]`) as HTMLButtonElement;
-    if(initator && initator.disabled !== undefined) {
-      initator.disabled = false;
-    }
-  }
+    document.body.insertAdjacentElement(
+      'beforeend', this.holder
+    );
 
-  disableInitator() {
-    let initator = document.querySelector(`[data-csvbox-initator][data-csvbox-token="${this.uuid}"]`) as HTMLButtonElement;
-    if(initator && initator.disabled !== undefined) {
-      initator.disabled = true;
-    }
   }
   
   openModal(): void {
-
     if(this.lazy) {
-      console.log("is lazy");
       if(!this.iframe) {
-        console.log("!iframe");
           this.openModalOnIframeLoad = true;
           this.initImporter();
           return;
-      }else{
-        console.log("iframe");
       }
     }
     if(!this.isModalShown) {
       if(this.isIframeLoaded) {
           this.isModalShown = true;
-          this.holder.nativeElement.style.display = 'block';
+          this.holder.style.display = 'block';
           this.iframe.contentWindow.postMessage('openModal', '*');
       } else {
           this.openModalOnIframeLoad = true;
-      }                    
+      }
     }
   }
 
