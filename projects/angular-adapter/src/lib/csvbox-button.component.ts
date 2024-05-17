@@ -53,6 +53,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
   @Input() customDomain: String = null;
   @Input() dataLocation: String = null;
   @Input() language: String = null;
+  @Input() environment: Object;
 
   @Input() isIframeLoaded: boolean = false;
   @Input() openModalOnIframeLoad: boolean = false;
@@ -82,6 +83,12 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
     }
     if(this.language){
       iframeUrl += "&language" + this.language;
+    }
+    if(this.environment) {
+      let environment = JSON.stringify(this.environment).replace(/['"]/g, function(match) {
+          return '\\' + match;
+      });
+      iframeUrl += `&env=${environment}`;
     }
     this.safeUrl = this.sanitizer.sanitize(SecurityContext.RESOURCE_URL, this.sanitizer.bypassSecurityTrustResourceUrl(iframeUrl));
   }
