@@ -137,7 +137,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
                         let dynamic_columns = {};
                         let virtual_data = {};
 
-                        row_data.data.forEach((col, i) => {
+                        row_data.data?.forEach((col, i) => {
 
                             if(col == undefined){ col = ""};
 
