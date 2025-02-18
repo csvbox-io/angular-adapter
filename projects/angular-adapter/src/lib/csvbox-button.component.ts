@@ -1,17 +1,18 @@
-import { 
+import {
   Component,
-  OnInit, 
-  ViewChild, 
-  Input, 
-  OnChanges, 
-  SimpleChanges, 
+  OnInit,
+  ViewChild,
+  Input,
+  OnChanges,
+  SimpleChanges,
   SecurityContext,
-  AfterContentInit 
+  AfterContentInit
 } from '@angular/core';
 
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-const { version: appVersion } = require('./../package.json');
 import { insertCSS } from '../utlis/insertCSS';
+
+const appVersion = '1.1.16';
 
 @Component({
   selector: 'csvbox-button',
@@ -28,7 +29,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
 
   isModalShown = false;
 
-  @ViewChild('initiator') initiator: any;
+  @ViewChild('initiator', {static: false}) initiator: any;
   @Input() onImport: Function;
   @Input() onReady: Function;
   @Input() onClose: Function;
@@ -71,12 +72,11 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
   holder: any;
 
   ngOnInit(): void {
-
     this.uuid = this.generateUuid();
     let domain = this.customDomain ? this.customDomain : "app.csvbox.io";
     if(this.dataLocation) { domain = `${this.dataLocation}-${domain}`; }
     let iframeUrl = `https://${domain}/embed/${this.licenseKey}`;
-    iframeUrl += `?library-version=${appVersion}`;
+    iframeUrl += `?library-version=${ appVersion }`;
     iframeUrl += "&framework=angular";
     if(this.dataLocation) {
       iframeUrl += "&preventRedirect";
@@ -105,26 +105,27 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
 
   updateUserVariabe(data): void {
     this.user = data;
-    this.iframe?.contentWindow?.postMessage({
-      "customer" : data
-    }, "*");
+    if (this.iframe && this.iframe.contentWindow) {
+      this.iframe.contentWindow.postMessage({
+        "customer" : data
+      }, "*");
+    }
   }
 
   ngAfterContentInit(): void {
-
     window.addEventListener("message", (event) => {
-      if(typeof event?.data == "object") {
-        if(event?.data?.data?.unique_token == this.uuid) {
+      if(event && typeof event.data == "object") {
+        if(event.data && event.data.data && event.data.data.unique_token == this.uuid) {
           if(event.data.type && event.data.type == "data-on-submit") {
             let metadata = event.data.data;
             metadata["column_mappings"] = event.data.column_mapping;
             delete metadata["unique_token"];
-            this.onSubmit?.(metadata);
-            this.isSubmitted?.(metadata);
-            this.submitted?.(metadata);
+            if (this.onSubmit) this.onSubmit(metadata);
+            if (this.isSubmitted) this.isSubmitted(metadata);
+            if (this.submitted) this.submitted(metadata);
           } else if(event.data.type && event.data.type == "data-push-status") {
             if(event.data.data.import_status == "success") {
-                if(event?.data?.row_data) {
+                if(event.data.data.row_data) {
                     let primary_row_data = event.data.row_data;
                     let headers = event.data.headers;
                     let rows = [];
@@ -132,35 +133,33 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
                     let virtual_columns_indexes = event.data.virtualColumnsIndexes || [];
 
                     primary_row_data.forEach((row_data) => {
-                        
                       let x = {};
-                        let dynamic_columns = {};
-                        let virtual_data = {};
+                      let dynamic_columns = {};
+                      let virtual_data = {};
 
-                        row_data.data?.forEach((col, i) => {
+                      row_data.data && row_data.data.forEach((col, i) => {
+                          if(col == undefined){ col = ""};
 
-                            if(col == undefined){ col = ""};
-
-                            if(dynamic_columns_indexes.includes(i)) {
-                                dynamic_columns[headers[i]] = col;
-                            }
-                            else if(virtual_columns_indexes.includes(i)) {
-                              virtual_data[headers[i]] = col;
-                            }
-                            else {
-                              x[headers[i]] = col;
-                            }
-                        });
-                        if(row_data?.unmapped_data) {
-                          x["_unmapped_data"] = row_data.unmapped_data;
-                        }
-                        if(dynamic_columns && Object.keys(dynamic_columns).length > 0) {
-                          x["_dynamic_data"] = dynamic_columns;
-                        }
-                        if(virtual_data && Object.keys(virtual_data).length > 0) {
-                          x["_virtual_data"] = virtual_data;
-                        }
-                        rows.push(x);
+                          if(dynamic_columns_indexes.includes(i)) {
+                              dynamic_columns[headers[i]] = col;
+                          }
+                          else if(virtual_columns_indexes.includes(i)) {
+                            virtual_data[headers[i]] = col;
+                          }
+                          else {
+                            x[headers[i]] = col;
+                          }
+                      });
+                      if(row_data && row_data.unmapped_data) {
+                        x["_unmapped_data"] = row_data.unmapped_data;
+                      }
+                      if(dynamic_columns && Object.keys(dynamic_columns).length > 0) {
+                        x["_dynamic_data"] = dynamic_columns;
+                      }
+                      if(virtual_data && Object.keys(virtual_data).length > 0) {
+                        x["_virtual_data"] = virtual_data;
+                      }
+                      rows.push(x);
                     });
                     let metadata = event.data.data;
                     metadata["rows"] = rows;
@@ -168,37 +167,37 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
                     metadata["raw_columns"] = event.data.raw_columns;
                     metadata["ignored_columns"] = event.data.ignored_column_row;
                     delete metadata["unique_token"];
-                    this.onImport?.(true, metadata);
-                    this.isImported?.(true, metadata);
-                    this.imported?.(true, metadata);
+                    if (this.onImport) this.onImport(true, metadata);
+                    if (this.isImported) this.isImported(true, metadata);
+                    if (this.imported) this.imported(true, metadata);
                 }else{
                     let metadata = event.data.data;
                     delete metadata["unique_token"];
-                    this.onImport?.(true, metadata);
-                    this.isImported?.(true, metadata);
-                    this.imported?.(true, metadata);
+                    if (this.onImport) this.onImport(true, metadata);
+                    if (this.isImported) this.isImported(true, metadata);
+                    if (this.imported) this.imported(true, metadata);
                 }
             }else {
                 let metadata = event.data.data;
                 delete metadata["unique_token"];
-                this.onImport?.(false, metadata);
-                this.isImported?.(false, metadata);
-                this.imported?.(false, metadata);
+                if (this.onImport) this.onImport(false, metadata);
+                if (this.isImported) this.isImported(false, metadata);
+                if (this.imported) this.imported(false, metadata);
             }
           } else if(event.data.type && event.data.type == "csvbox-modal-hidden") {
-            this.holder.style.display = 'none';
+            if(this.holder) this.holder.style.display = 'none';
             this.isModalShown = false;
-            this.onClose?.();
-            this.isClosed?.();
-            this.closed?.();
+            if (this.onClose) this.onClose();
+            if (this.isClosed) this.isClosed();
+            if (this.closed) this.closed();
           } else if(event.data.type && event.data.type == "csvbox-upload-successful") {
-              this.onImport?.(true);
-              this.isImported?.(true);
-              this.imported?.(true);
+              if (this.onImport) this.onImport(true);
+              if (this.isImported) this.isImported(true);
+              if (this.imported) this.imported(true);
           } else if(event.data.type && event.data.type == "csvbox-upload-failed") {
-              this.onImport?.(false);
-              this.isImported?.(false);
-              this.imported?.(false);
+              if (this.onImport) this.onImport(false);
+              if (this.isImported) this.isImported(false);
+              if (this.imported) this.imported(false);
           }
         }
       }
@@ -210,11 +209,10 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
       this.disabled = true;
       this.initImporter();
     }
-
   }
-  initImporter() {
 
-    this.loadStarted?.();
+  initImporter() {
+    if (this.loadStarted) this.loadStarted();
 
     insertCSS();
 
@@ -225,19 +223,20 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
 
     let self = this;
     iframe.onload = function () {
-      
-      self.onReady?.();
-      self.isReady?.();
-      self.importerReady?.();
+      if (self.onReady) self.onReady();
+      if (self.isReady) self.isReady();
+      if (self.importerReady) self.importerReady();
 
       self.disabled = false;
       self.isIframeLoaded = true;
-      iframe.contentWindow.postMessage({
-        "customer" : self.user ? self.user : null,
-        "columns" : self.dynamicColumns ? self.dynamicColumns : null,
-        "options" : self.options ? self.options : null,
-        "unique_token": self.uuid
-      }, "*");
+      if (self.iframe && self.iframe.contentWindow) {
+        self.iframe.contentWindow.postMessage({
+          "customer" : self.user ? self.user : null,
+          "columns" : self.dynamicColumns ? self.dynamicColumns : null,
+          "options" : self.options ? self.options : null,
+          "unique_token": self.uuid
+        }, "*");
+      }
       if(self.openModalOnIframeLoad) {
         self.openModal();
       }
@@ -251,9 +250,8 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
     document.body.insertAdjacentElement(
       'beforeend', this.holder
     );
-
   }
-  
+
   openModal(): void {
     if(this.lazy) {
       if(!this.iframe) {
@@ -265,8 +263,10 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
     if(!this.isModalShown) {
       if(this.isIframeLoaded) {
           this.isModalShown = true;
-          this.holder.style.display = 'block';
-          this.iframe.contentWindow.postMessage('openModal', '*');
+          if(this.holder) this.holder.style.display = 'block';
+          if(this.iframe && this.iframe.contentWindow) {
+            this.iframe.contentWindow.postMessage('openModal', '*');
+          }
       } else {
           this.openModalOnIframeLoad = true;
       }

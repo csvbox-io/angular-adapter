@@ -26,7 +26,10 @@ export const insertCSS = (): void => {
 
   styleElement = document.createElement('style')
   styleElement.setAttribute('type', 'text/css')
-  document.querySelector('head')?.appendChild(styleElement)
+  const head = document.querySelector('head');
+  if (head) {
+    head.appendChild(styleElement);
+  }
 
   styleElement.textContent = GLOBAL_CSS
 }
