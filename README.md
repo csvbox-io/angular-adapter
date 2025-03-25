@@ -2,7 +2,17 @@
 
 > Angular adapter for csvbox.io
 
+## ✅ Only for Angular version 8 to 13
+## ⚠️ For Angular version 14 and above, please use [@csvbox/angular2](https://www.npmjs.com/package/@csvbox/angular2) package
+
 [![NPM](https://img.shields.io/npm/v/@csvbox/angular.svg)](https://www.npmjs.com/package/@csvbox/angular) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+
+## Compatibility
+
+| Angular Version	 | Package |
+| ------ | ------ |
+|8 to 13|@csvbox/angular (this package)|
+|14 to 19|[@csvbox/angular2](https://www.npmjs.com/package/@csvbox/angular2)|
 
 ## Shell
 
