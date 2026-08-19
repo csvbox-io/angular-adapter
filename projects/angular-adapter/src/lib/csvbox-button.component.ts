@@ -224,6 +224,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
     let iframe = document.createElement("iframe");
     this.iframe = iframe;
     iframe.setAttribute("src", this.safeUrl);
+    iframe.setAttribute("allow", "clipboard-read; clipboard-write *");
     iframe.frameBorder = "0";
 
     let self = this;
