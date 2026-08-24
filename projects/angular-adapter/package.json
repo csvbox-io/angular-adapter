@@ -13,7 +13,8 @@
     "@angular/common": ">=8.0.0 <14.0.0"
   },
   "dependencies": {
-    "tslib": "^2.0.0"
+    "tslib": "^2.0.0",
+    "@csvbox/adapter": "^0.0.1"
   },
   "keywords": [
     "csv",
@@ -34,8 +35,5 @@
   "bugs": {
     "url": "https://github.com/csvbox-io/angular-adapter/issues"
   },
-  "homepage": "https://github.com/csvbox-io/angular-adapter#readme",
-  "directories": {
-    "example": "example"
-  }
+  "homepage": "https://github.com/csvbox-io/angular-adapter#readme"
 }

@@ -12,7 +12,7 @@
 | Angular Version	 | Package |
 | ------ | ------ |
 |8 to 13|@csvbox/angular (this package)|
-|14 to 19|[@csvbox/angular2](https://www.npmjs.com/package/@csvbox/angular2)|
+|14 to 22|[@csvbox/angular2](https://www.npmjs.com/package/@csvbox/angular2)|
 
 ## Shell
 
