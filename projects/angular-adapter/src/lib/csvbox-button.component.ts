@@ -11,7 +11,7 @@ import {
 
 import { DomSanitizer } from '@angular/platform-browser';
 import { insertCSS } from '../utlis/insertCSS';
-import { buildImportUrl, generateUuid, buildInitPayload, classifyStructuredMessage } from '@csvbox/adapter';
+import { buildImportUrl, generateUuid, buildInitPayload, classifyStructuredMessage, classifyLegacyMessage } from '@csvbox/adapter';
 
 // How long we wait for the importer to reply before sending the file anyway.
 const ORIGIN_PROBE_TIMEOUT_MS = 1500;
@@ -125,70 +125,89 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
     }
   }
 
-  ngAfterContentInit(): void {
-    window.addEventListener("message", (event) => {
-      // Set-file handshake messages. The shared core does not classify these, so they are
-      // read here, behind the same unique_token check the core applies.
-      const raw = event.data;
-      if (raw && typeof raw === "object" && raw.data && raw.data.unique_token == this.uuid) {
-        this.learnImporterOrigin(event);
-
-        if (raw.type === "csvbox-set-file-rejected" && raw.data.reason === "not-a-file") {
-          // Reply to our probe (it has no file). It only tells us the origin, so do nothing.
-          return;
-        }
-        if (raw.type === "csvbox-modal-shown") {
-          // What the file path in openModal() is waiting for. display as well as
-          // pointer-events: a second file declined while the first was still opening the
-          // modal has put the holder away in the meantime.
-          this.isModalShown = true;
-          if (this.holder) {
-            this.holder.style.display = 'block';
-            this.holder.style.pointerEvents = 'auto';
-          }
-          return;
-        }
-        if (raw.type === "csvbox-set-file-rejected") {
-          // The importer has the file and will not take it. Put the holder away only if the
-          // modal was never confirmed up: a file declined while it is open leaves that modal
-          // where it is, and its own 'csvbox-modal-hidden' will put the holder away.
-          if (!this.isModalShown && this.holder) {
-            this.holder.style.display = 'none';
-            this.holder.style.pointerEvents = 'auto';
-          }
-          console.warn("[csvbox] importer declined the supplied file: " + raw.data.reason);
-          return;
-        }
+  private messageListener = (event: MessageEvent) => {
+    // Older importers send these as bare strings, without a token.
+    const legacy = classifyLegacyMessage(event.data);
+    if (legacy) {
+      if (legacy.type === "mainModalHidden") {
+        this.handleModalClosed();
+      } else if (legacy.type === "uploadSuccessful") {
+        if (this.onImport) this.onImport(true);
+        if (this.isImported) this.isImported(true);
+        if (this.imported) this.imported(true);
+      } else if (legacy.type === "uploadFailed") {
+        if (this.onImport) this.onImport(false);
+        if (this.isImported) this.isImported(false);
+        if (this.imported) this.imported(false);
       }
+      return;
+    }
 
-      let message = classifyStructuredMessage(event.data, this.uuid!);
-      if (!message) {
+    // Set-file handshake messages. The shared core does not classify these, so they are
+    // read here, behind the same unique_token check the core applies.
+    const raw = event.data;
+    if (raw && typeof raw === "object" && raw.data && raw.data.unique_token == this.uuid) {
+      this.learnImporterOrigin(event);
+
+      if (raw.type === "csvbox-set-file-rejected" && raw.data.reason === "not-a-file") {
+        // Reply to our probe (it has no file). It only tells us the origin, so do nothing.
         return;
       }
-
-      if (message.type === "data-on-submit") {
-        if (this.onSubmit) this.onSubmit(message.metadata);
-        if (this.isSubmitted) this.isSubmitted(message.metadata);
-        if (this.submitted) this.submitted(message.metadata);
-      } else if (message.type === "data-push-status") {
-        if (!message.success) {
-          delete message.metadata["unique_token"];
+      if (raw.type === "csvbox-modal-shown") {
+        // What the file path in openModal() is waiting for. display as well as
+        // pointer-events: a second file declined while the first was still opening the
+        // modal has put the holder away in the meantime.
+        this.isModalShown = true;
+        if (this.holder) {
+          this.holder.style.display = 'block';
+          this.holder.style.pointerEvents = 'auto';
         }
-        if (this.onImport) this.onImport(message.success, message.metadata);
-        if (this.isImported) this.isImported(message.success, message.metadata);
-        if (this.imported) this.imported(message.success, message.metadata);
-      } else if (message.type === "csvbox-modal-hidden") {
-        this.handleModalClosed();
-      } else if (message.type === "csvbox-upload-successful") {
-          if (this.onImport) this.onImport(true);
-          if (this.isImported) this.isImported(true);
-          if (this.imported) this.imported(true);
-      } else if (message.type === "csvbox-upload-failed") {
-          if (this.onImport) this.onImport(false);
-          if (this.isImported) this.isImported(false);
-          if (this.imported) this.imported(false);
+        return;
       }
-    }, false);
+      if (raw.type === "csvbox-set-file-rejected") {
+        // The importer has the file and will not take it. Put the holder away only if the
+        // modal was never confirmed up: a file declined while it is open leaves that modal
+        // where it is, and its own 'csvbox-modal-hidden' will put the holder away.
+        if (!this.isModalShown && this.holder) {
+          this.holder.style.display = 'none';
+          this.holder.style.pointerEvents = 'auto';
+        }
+        console.warn("[csvbox] importer declined the supplied file: " + raw.data.reason);
+        return;
+      }
+    }
+
+    let message = classifyStructuredMessage(event.data, this.uuid!);
+    if (!message) {
+      return;
+    }
+
+    if (message.type === "data-on-submit") {
+      if (this.onSubmit) this.onSubmit(message.metadata);
+      if (this.isSubmitted) this.isSubmitted(message.metadata);
+      if (this.submitted) this.submitted(message.metadata);
+    } else if (message.type === "data-push-status") {
+      if (!message.success) {
+        delete message.metadata["unique_token"];
+      }
+      if (this.onImport) this.onImport(message.success, message.metadata);
+      if (this.isImported) this.isImported(message.success, message.metadata);
+      if (this.imported) this.imported(message.success, message.metadata);
+    } else if (message.type === "csvbox-modal-hidden") {
+      this.handleModalClosed();
+    } else if (message.type === "csvbox-upload-successful") {
+        if (this.onImport) this.onImport(true);
+        if (this.isImported) this.isImported(true);
+        if (this.imported) this.imported(true);
+    } else if (message.type === "csvbox-upload-failed") {
+        if (this.onImport) this.onImport(false);
+        if (this.isImported) this.isImported(false);
+        if (this.imported) this.imported(false);
+    }
+  };
+
+  ngAfterContentInit(): void {
+    window.addEventListener("message", this.messageListener, false);
 
     if(this.lazy) {
       this.disabled = false;
@@ -405,5 +424,6 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
 
   ngOnDestroy(): void {
     this.clearProbeTimer();
+    window.removeEventListener("message", this.messageListener);
   }
 }
