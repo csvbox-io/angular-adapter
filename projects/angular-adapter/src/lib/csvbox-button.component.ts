@@ -16,7 +16,7 @@ import { buildImportUrl, generateUuid, buildInitPayload, classifyStructuredMessa
 // How long we wait for the importer to reply before sending the file anyway.
 const ORIGIN_PROBE_TIMEOUT_MS = 1500;
 
-const appVersion = '1.1.16';
+const appVersion = '1.1.20';
 
 @Component({
   selector: 'csvbox-button',
