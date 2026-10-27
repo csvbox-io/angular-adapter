@@ -180,6 +180,8 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
         return;
       }
       const ended = this.importTracker.observe(legacy);
+      // Clean up before the callbacks run: a callback that throws must not leave a closed import behind.
+      this.finishImport(ended);
       if (legacy.type === "mainModalHidden") {
         this.handleModalClosed();
       } else if (legacy.type === "uploadSuccessful") {
@@ -191,7 +193,6 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
         if (this.isImported) this.isImported(false);
         if (this.imported) this.imported(false);
       }
-      this.finishImport(ended);
       return;
     }
 
@@ -239,6 +240,7 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
     }
     this.messageGate.markTyped();
     const ended = this.importTracker.observe(message);
+    this.finishImport(ended);
 
     if (message.type === "data-on-submit") {
       if (this.onSubmit) this.onSubmit(message.metadata);
@@ -259,10 +261,14 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
         if (this.isImported) this.isImported(false);
         if (this.imported) this.imported(false);
     }
-    this.finishImport(ended);
   };
 
   ngAfterContentInit(): void {
+    // Server-side rendering has no window: the server only renders the (disabled) button, and the browser starts
+    // the importer once the page is hydrated.
+    if (typeof window === 'undefined') {
+      return;
+    }
     window.addEventListener("message", this.messageListener, false);
     this.syncBlocked();
     this.unsubscribeOpenImporters = subscribeOpenImporters(() => this.syncBlocked());
@@ -347,18 +353,26 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
     let self = this;
     iframe.onload = function () {
       self.disabled = false;
+      // The load event is not part of a change-detection run: tell Angular to redraw, or a zoneless app
+      // (the default since Angular 21) would keep the button disabled.
+      self.cdr.markForCheck();
       self.isIframeLoaded = true;
       // The handshake goes first: a consumer that calls openModalWithFile() from the ready
       // callback needs the importer to already have its customer, columns, options and token.
       if (self.iframe && self.iframe.contentWindow) {
         self.iframe.contentWindow.postMessage(buildInitPayload(self.user, self.dynamicColumns, self.options, self.uuid!), "*");
       }
-      if (self.onReady) self.onReady();
-      if (self.isReady) self.isReady();
-      if (self.importerReady) self.importerReady();
-
-      if (self.lifecycle.markReady()) {
-        self.openModal();
+      // The importer is ready whatever the callback does: if onReady throws, an open that was waiting
+      // for the iframe must still go ahead.
+      const openWhenReady = self.lifecycle.markReady();
+      try {
+        if (self.onReady) self.onReady();
+        if (self.isReady) self.isReady();
+        if (self.importerReady) self.importerReady();
+      } finally {
+        if (openWhenReady) {
+          self.openModal();
+        }
       }
     }
 
@@ -502,6 +516,10 @@ export class CSVBoxButtonComponent implements OnInit, OnChanges, AfterContentIni
   }
 
   ngOnDestroy(): void {
+    // Nothing was set up on a server, and there is no window to clean up.
+    if (typeof window === 'undefined') {
+      return;
+    }
     window.removeEventListener("message", this.messageListener);
     // Takes the holder out of document.body: left there, it would keep covering the page with
     // an invisible full-screen layer that nothing is left to hide.
